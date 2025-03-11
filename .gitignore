@@ -6,7 +6,6 @@
 # Custom
 
 .vscode
-src/
 src/main.cpp
 main.exe
 dependencies
