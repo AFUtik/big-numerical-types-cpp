@@ -1,13 +1,51 @@
 cmake_minimum_required(VERSION 3.10.0)
-project(BigNTypes VERSION 0.1.0 LANGUAGES C CXX)
+project(BigNTypes)
+
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 file(GLOB_RECURSE SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
 file(GLOB_RECURSE HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp)
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
+target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
 # add_library(BigNTypes STATIC ${SOURCES})
 
-add_executable(BigNTypes src/main.cpp ${HEADERS})
+if(MSVC)
+    if(NOT CMAKE_BUILD_TYPE)
+        set(CMAKE_BUILD_TYPE
+            Release
+            CACHE STRING "Build type" FORCE)
+    endif()
+
+    if(CMAKE_BUILD_TYPE MATCHES "Release") 
+        target_compile_options(${PROJECT_NAME} PRIVATE /W4 /MT /O2)
+    else()
+        target_compile_options(${PROJECT_NAME} PRIVATE /W4 /RTC)
+    endif()
+else()
+    if(CMAKE_BUILD_TYPE MATCHES "Release")
+        target_compile_options(${PROJECT_NAME} PRIVATE -O2)
+    else()
+        target_compile_options(${PROJECT_NAME} PRIVATE -Og)
+    endif()
+
+    target_compile_options(
+        ${PROJECT_NAME}
+        PRIVATE -Wall
+                -Wextra
+                # additional warnings
+                -Wformat-nonliteral
+                -Wcast-align
+                -Wpointer-arith
+                -Wundef
+                -Wwrite-strings
+                -Wno-unused-parameter)
+    if(WIN32)
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static")
+    endif()
+endif()
 
 #install(TARGETS BigNTypes
 #    ARCHIVE DESTINATION lib
