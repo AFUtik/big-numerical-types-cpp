@@ -13,16 +13,11 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/in
 # add_library(BigNTypes STATIC ${SOURCES})
 
 if(MSVC)
-    if(NOT CMAKE_BUILD_TYPE)
-        set(CMAKE_BUILD_TYPE
-            Release
-            CACHE STRING "Build type" FORCE)
-    endif()
-
     if(CMAKE_BUILD_TYPE MATCHES "Release") 
         target_compile_options(${PROJECT_NAME} PRIVATE /W4 /MT /O2)
     else()
-        target_compile_options(${PROJECT_NAME} PRIVATE /W4 /RTC)
+        message("debug")
+        target_compile_options(${PROJECT_NAME} PRIVATE /Zi /Od /W4 /DEBUG)
     endif()
 else()
     if(CMAKE_BUILD_TYPE MATCHES "Release")

@@ -13,51 +13,103 @@
 namespace ntp {
 
 class bigint {
-public:  
-    uint32_t *ints;
+private:  
+    
     size_t capacity;
     size_t cursor = 1;
-    
-    bool is_signed = false;
+    bool sign = 0;
 
-    bigint() : ints(new uint32_t[4]{}), capacity(4) {}
+    void reallocate();
+public:
+uint32_t *ints;
+
+    bigint() : ints(new uint32_t[2]{}), capacity(2) {}
 
     bigint(const uint32_t &size) : ints(new uint32_t[size]{}), capacity(size) {}
 
     bigint(const std::string &string);
 
-    ~bigint() {
-        if(ints) delete[] ints;
-    }
-    
-    const std::string str() {
-        return {};
-    }
+    bigint(const bigint &other);
+
+    ~bigint();
+
+    std::string str();
+
+    inline const uint32_t* blocks()  {return ints;}
+    inline const std::size_t& size() {return capacity;}
+
+    bigint operator+(const int64_t &other);
+    bigint operator-(const int64_t &other);
+    bigint operator*(const int64_t &other);
+    bigint operator/(const int64_t &other);
 
     bigint operator+(const bigint &other) noexcept;
     bigint operator-(const bigint &other) noexcept;
     bigint operator*(const bigint &other) noexcept;
     bigint operator/(const bigint &other) noexcept;
+    
+    void operator+=(const int64_t &other) noexcept;
+    void operator-=(const int64_t &other) noexcept;
+    void operator*=(const int64_t &other) noexcept;
+    void operator/=(const int64_t &other) noexcept;
+    void operator%=(const int64_t &other) noexcept;
 
     void operator+=(const bigint & other) noexcept;
     void operator-=(const bigint & other) noexcept;
     void operator*=(const bigint & other) noexcept;
     void operator/=(const bigint &other)  noexcept;
+    void operator%=(const bigint &other) noexcept;
 
-    bigint operator+(const int &other);
-    bigint operator-(const int &other);
-    bigint operator*(const int &other);
-    bigint operator/(const int &other);
+    bool operator==(const int64_t &other) noexcept;
+    bool operator!=(const int64_t &other) noexcept;
+    bool operator< (const int64_t &other) noexcept;
+    bool operator> (const int64_t &other) noexcept;
+    bool operator>=(const int64_t &other) noexcept;
+    bool operator<=(const int64_t &other) noexcept;
 
-    void operator+=(const int &other) noexcept;
-    void operator-=(const int &other) noexcept;
-    void operator*=(const int &other) noexcept;
-    void operator/=(const int &other) noexcept;
+    bool operator==(const bigint &other) noexcept;
+    bool operator!=(const bigint &other) noexcept;
+    bool operator< (const bigint &other) noexcept;
+    bool operator> (const bigint &other) noexcept;
+    bool operator>=(const bigint &other) noexcept;
+    bool operator<=(const bigint &other) noexcept;
+
+    /* binary operators */
+    bigint operator>>(const int64_t &other) noexcept;
+    bigint operator<<(const int64_t &other) noexcept;
+    bigint operator| (const int64_t &other) noexcept;
+    bigint operator^ (const int64_t &other) noexcept;
+    bigint operator& (const int64_t &other) noexcept;
+    bigint operator% (const int64_t &other) noexcept;
+
+    void operator>>= (const int64_t &other) noexcept;
+    void operator<<= (const int64_t &other) noexcept;
+    void operator&=  (const int64_t &other) noexcept;
+    void operator|=  (const int64_t &other) noexcept;
+    void operator^=  (const int64_t &other) noexcept;
+
+    bigint operator>>(const bigint &other) noexcept;
+    bigint operator<<(const bigint &other) noexcept;
+    bigint operator| (const bigint &other) noexcept;
+    bigint operator^ (const bigint &other) noexcept;
+    bigint operator& (const bigint &other) noexcept;
+    bigint operator% (const bigint &other) noexcept;
+    
+    void operator>>= (const bigint &other) noexcept;
+    void operator<<= (const bigint &other) noexcept;
+    void operator&=  (const bigint &other) noexcept;
+    void operator|=  (const bigint &other) noexcept;
+    void operator^=  (const bigint &other) noexcept;
+
+    bigint pow(uint64_t exp);
+    bigint sqrt();
+
+    inline void negate() {this->sign = !sign;}
+    uint64_t bit_length();
+
+    // gcd(const bigint& a, const bigint& b);
+    // lcm(const bigint& a, const bigint& b)
 };
-
-extern bigint pow(bigint base, uint32_t exp);
-
-extern bigint sqrt(const bigint& number);
 
 }
 
