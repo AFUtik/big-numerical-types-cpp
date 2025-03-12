@@ -36,13 +36,19 @@ bigint::bigint(const std::string &string) : ints(new uint32_t[4]{}), capacity(4)
         for(size_t j = 0; j < len; j++) {
             value = value * 10 + (string[i+j]-'0');
         } /* value parsing */
-         
+
         uint64_t carry = 0;
         for (size_t j = 0; j < capacity; ++j) {
             uint64_t product = static_cast<uint64_t>(ints[j]) * base[len] + carry;
 
             ints[j] = static_cast<uint32_t>(product);
             carry   = product >> 32;
+        }
+        if(carry) {
+            size_t index = capacity;
+            this->reallocate();
+
+            ints[index] = carry;
         }
 
         for(size_t j = 0; j < capacity; ++j) { 
@@ -51,6 +57,12 @@ bigint::bigint(const std::string &string) : ints(new uint32_t[4]{}), capacity(4)
             value   = sum < ints[j];
 
             if(value == 0) break;
+        }
+        if(value) {
+            size_t index = capacity;
+            this->reallocate();
+
+            ints[index] = carry;
         }
     }
 }
@@ -62,9 +74,12 @@ bigint::~bigint() {
 void bigint::reallocate() {
     const size_t new_capacity = capacity*2;
 
-    uint32_t *new_ints = new uint32_t[new_capacity];
+    uint32_t *new_ints = new uint32_t[new_capacity]{};
     memcpy(new_ints, ints, sizeof(uint32_t) * capacity);
     capacity = new_capacity;
+
+    delete[] ints;
+    ints = new_ints;
 }
 
 bigint bigint::operator+(const bigint & other) noexcept {
@@ -164,6 +179,7 @@ void bigint::operator*=(const bigint &other) noexcept {
             res[j] = static_cast<uint32_t>(product);
             carry  = product >> 32;
         }
+        if(carry)
     }
     delete[] ints;
     this->ints = res;
