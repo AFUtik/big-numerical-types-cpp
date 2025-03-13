@@ -37,12 +37,10 @@ public:
     std::string str();
     std::string poly_str(); // Returns polynomial of big integer in string
     
-    // Transforms Bigint into base256 string. Can be used for compessing big-integer.
-    std::string base256(); // Compress data in 2.5 times
-    std::string base128(); // Compress data in 2.0 times
+    // Transforms Bigint into base64 string. Can be used for compessing big-integer.
+    std::string base64(); // Compress data in 2.5 times
 
-    void extract256(std::string_view str); // Extracts BASE256 symbols and converts to big-integer.
-    void extract128(std::string_view str); // Extracts BASE128 symbols and converts to big-integer.
+    void extract64(const std::string &str); // Extracts BASE256 symbols and converts to big-integer.
 
     inline const std::size_t& size() {return capacity;}
     inline const uint32_t*  blocks() {return ints;}
@@ -116,14 +114,14 @@ public:
 
     // Other operations
 
-    bigint pow(uint64_t exp);
-    bigint pow(double exp);
+    bigint pow(uint64_t exp) const;
+    bigint pow(double exp)   const;
 
-    bigint sqrt();
+    bigint sqrt() const;
 
-    uint32_t log10();
-    uint32_t log2();
-    uint32_t log();
+    uint32_t log10() const;
+    uint32_t log2()  const;
+    uint32_t log(uint32_t base) const;
 
     void reverse();     // Reverses bits in big integer.
     void shift_left();  // Makes fast 32bit shift to the left.

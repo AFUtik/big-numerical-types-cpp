@@ -1,5 +1,5 @@
 #include "ntype/bigint.hpp"
-#include "ntype/utils/base256.hpp"
+#include "ntype/utils/base.h"
 
 #include <iostream>
 
@@ -287,7 +287,7 @@ std::string bigint::str() {
     return "";
 }
 
-bigint bigint::pow(uint64_t exp) {
+bigint bigint::pow(uint64_t exp) const {
     bigint result(capacity);
     bigint base = *this;
     
@@ -301,7 +301,7 @@ bigint bigint::pow(uint64_t exp) {
     return result;
 }
 
-bigint bigint::sqrt() {
+bigint bigint::sqrt() const {
     // if (x < 0) return -1; // Ошибка
     // if (x == 0 || x == 1) return x;
 
