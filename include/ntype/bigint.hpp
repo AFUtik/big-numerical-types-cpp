@@ -37,8 +37,8 @@ public:
     std::string str();
     std::string poly_str(); // Returns polynomial of big integer in string
     
-    // Transforms Bigint into base64 string. Can be used for compessing big-integer.
-    std::string base64(); // Compress data in 2.5 times
+    // Transforms Bigint into base64 string.
+    std::string base64();
 
     void extract64(const std::string &str); // Extracts BASE256 symbols and converts to big-integer.
 
