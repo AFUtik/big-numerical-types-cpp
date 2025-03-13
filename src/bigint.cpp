@@ -1,4 +1,6 @@
 #include "ntype/bigint.hpp"
+#include "ntype/utils/base256.hpp"
+
 #include <iostream>
 
 const uint64_t base[] = {
@@ -14,7 +16,12 @@ const uint64_t base[] = {
     1'000'000'000,
 }; /* predefined bases */
 
+
 using namespace ntp;
+
+size_t bigint::default_size = 4;
+
+bigint::bigint() : ints(new uint32_t[bigint::default_size]{}), capacity(bigint::default_size) {}
 
 bigint::bigint(const bigint &other) : 
     ints(new uint32_t[other.capacity]), 
@@ -46,7 +53,7 @@ bigint::bigint(const std::string &string) : ints(new uint32_t[4]{}), capacity(4)
         }
         if(carry) {
             size_t index = capacity;
-            this->reallocate();
+            this->reallocate(capacity*2);
 
             ints[index] = carry;
         }
@@ -60,7 +67,7 @@ bigint::bigint(const std::string &string) : ints(new uint32_t[4]{}), capacity(4)
         }
         if(value) {
             size_t index = capacity;
-            this->reallocate();
+            this->reallocate(capacity*2);
 
             ints[index] = carry;
         }
@@ -71,9 +78,7 @@ bigint::~bigint() {
     if(ints) {delete[] ints;}
 }
 
-void bigint::reallocate() {
-    const size_t new_capacity = capacity*2;
-
+void bigint::reallocate(const size_t &new_capacity) {
     uint32_t *new_ints = new uint32_t[new_capacity]{};
     memcpy(new_ints, ints, sizeof(uint32_t) * capacity);
     capacity = new_capacity;
@@ -82,7 +87,9 @@ void bigint::reallocate() {
     ints = new_ints;
 }
 
-bigint bigint::operator+(const bigint & other) noexcept {
+/* bigint x bigint */
+
+bigint bigint::operator+(const bigint & other) const noexcept {
     bigint result;
     bool carry = 0;
     for (size_t i = 0; i < capacity; ++i) { 
@@ -96,7 +103,7 @@ bigint bigint::operator+(const bigint & other) noexcept {
     return result;
 }
 
-bigint bigint::operator-(const bigint & other) noexcept {
+bigint bigint::operator-(const bigint & other) const noexcept {
     bigint result;
     bool carry = 0;
     for (size_t i = 0; i < capacity; ++i) { 
@@ -110,7 +117,7 @@ bigint bigint::operator-(const bigint & other) noexcept {
     return result;
 }
 
-bigint bigint::operator*(const bigint &other) noexcept {
+bigint bigint::operator*(const bigint &other) const noexcept {
     bigint result;
     uint64_t carry = 0;
     for (size_t i = 0; i < capacity; ++i) {
@@ -126,24 +133,27 @@ bigint bigint::operator*(const bigint &other) noexcept {
     return result;
 }
 
-bigint bigint::operator/(const bigint &other) noexcept {
-    //bigint result, remainder = *this;
-    //for (size_t i = capacity; i-- > 0;) { 
-    //    remainder <<= 1;
-    //    remainder.ints[0] = ints[i];
-
-    //    uint32_t q = 0;
-    //    while (remainder >= other) {
-    //        remainder -= other;
-    //        ++q;
-    //    }
-
-    //    result.ints[i] = q;
-    //}
-
-    //return result;
-    return {};
+bigint bigint::operator/(const bigint &other) const noexcept {
+    bigint result, remainder;
+    for (int i = this->capacity - 1; i >= 0; --i) {
+        remainder = (remainder << 32) | this->ints[i];
+        uint32_t div = 0, left = 0, right = UINT32_MAX;
+        while (left <= right) {
+            uint32_t mid = left + (right - left) / 2;
+            if (other * mid <= remainder) {
+                div = mid;
+                left = mid + 1;
+            } else {
+                right = mid - 1;
+            }
+        }
+        remainder -= other * div;
+        result.ints[i] = div;
+    }
+    return result;
 }
+
+/* bigint x= bigint */
 
 void bigint::operator+=(const bigint &other) noexcept {
     bool carry = 0;
@@ -179,7 +189,6 @@ void bigint::operator*=(const bigint &other) noexcept {
             res[j] = static_cast<uint32_t>(product);
             carry  = product >> 32;
         }
-        if(carry)
     }
     delete[] ints;
     this->ints = res;
@@ -189,42 +198,90 @@ void bigint::operator/=(const bigint &other) noexcept {
     
 }
 
+void bigint::operator%=(const bigint &other)  noexcept {}
+
+/* bigint x uint32_t */
+
+bigint bigint::operator+(const uint32_t &other) const noexcept {return {};}
+bigint bigint::operator-(const uint32_t &other) const noexcept {return {};}
+
+bigint bigint::operator*(const uint32_t &other) const noexcept {
+    bigint result;
+    uint64_t carry = 0;
+    for(size_t i = 0; i < capacity; i++) {
+        uint64_t product = ints[i] * other + carry;
+        result.ints[i] = static_cast<uint32_t>(product);
+        carry = product >> 32;
+    }
+    return result;
+}
+bigint bigint::operator/(const uint32_t &other) const noexcept {return {};}
+
+void bigint::operator%=(const int32_t &other) noexcept {}
 
 
-void bigint::operator%=(const int64_t &other) noexcept {}
-void bigint::operator%=(const bigint &other) noexcept {}
+/* Binary Operators bigint x uint32_t */
 
-bigint bigint::operator>>(const int64_t &other) noexcept {return {};};
-bigint bigint::operator<<(const int64_t &other) noexcept {return {};};
-bigint bigint::operator| (const int64_t &other) noexcept {return {};};
-bigint bigint::operator^ (const int64_t &other) noexcept {return {};};
-bigint bigint::operator& (const int64_t &other) noexcept {return {};};
-bigint bigint::operator% (const int64_t &other) noexcept {return {};};
-void bigint::operator>>= (const int64_t &other) noexcept {};
-void bigint::operator<<= (const int64_t &other) noexcept {};
+bigint bigint::operator>>(const int32_t &bits) const noexcept {
+    size_t shift_words = bits / 32;
 
-bigint bigint::operator>>(const bigint &other) noexcept {return {};};
-bigint bigint::operator<<(const bigint &other) noexcept {return {};};
-bigint bigint::operator| (const bigint &other) noexcept {return {};};
-bigint bigint::operator^ (const bigint &other) noexcept {return {};};
-bigint bigint::operator& (const bigint &other) noexcept {return {};};
-bigint bigint::operator% (const bigint &other) noexcept {return {};};
+    bigint result;
+    uint64_t carry = 0;
+    for(size_t i = capacity+shift_words-1; i >= 0; i--) {
+        uint64_t res = (static_cast<uint64_t>(ints[i]) >> bits) | carry;
+        carry = res >> 32;
+        result.ints[i-shift_words] = static_cast<uint32_t>(res);
+    }
+    return result;
+};
+
+bigint bigint::operator<<(const int32_t &bits) const noexcept {
+    size_t shift_words = bits / 32;
+
+    bigint result;
+    uint64_t carry = 0;
+    for(size_t i = 0; i < capacity-shift_words; i++) {
+        uint64_t res = (static_cast<uint64_t>(ints[i]) << bits) | carry;
+        carry = res >> 32;
+        result.ints[i+shift_words] = static_cast<uint32_t>(res);
+    }
+    return result;
+};
+
+bigint bigint::operator| (const int32_t &value) const noexcept {
+    bigint result = *this;
+    result.ints[0]|=value;
+    return result;
+};
+
+bigint bigint::operator^ (const int32_t &other) const noexcept {return {};};
+bigint bigint::operator& (const int32_t &other) const noexcept {return {};};
+bigint bigint::operator% (const int32_t &other) const noexcept {return {};};
+void bigint::operator>>= (const int32_t &other) noexcept {};
+void bigint::operator<<= (const int32_t &other) noexcept {};
+
+bigint bigint::operator>>(const bigint &other) const noexcept {return {};};
+bigint bigint::operator<<(const bigint &other) const noexcept {return {};};
+bigint bigint::operator| (const bigint &other) const noexcept {return {};};
+bigint bigint::operator^ (const bigint &other) const noexcept {return {};};
+bigint bigint::operator& (const bigint &other) const noexcept {return {};};
+bigint bigint::operator% (const bigint &other) const noexcept {return {};};
 void bigint::operator>>= (const bigint &other) noexcept {};
 void bigint::operator<<= (const bigint &other) noexcept {};
 
-bool bigint::operator!=(const int64_t &other) noexcept {return 0;};
-bool bigint::operator==(const int64_t &other) noexcept {return 0;};
-bool bigint::operator< (const int64_t &other) noexcept {return 0;};
-bool bigint::operator> (const int64_t &other) noexcept {return 0;};
-bool bigint::operator>=(const int64_t &other) noexcept {return 0;};
-bool bigint::operator<=(const int64_t &other) noexcept {return 0;};
+bool bigint::operator!=(const int32_t &other) const noexcept {return 0;};
+bool bigint::operator==(const int32_t &other) const noexcept {return 0;};
+bool bigint::operator< (const int32_t &other) const noexcept {return 0;};
+bool bigint::operator> (const int32_t &other) const noexcept {return 0;};
+bool bigint::operator>=(const int32_t &other) const noexcept {return 0;};
+bool bigint::operator<=(const int32_t &other) const noexcept {return 0;};
 
-bool bigint::operator==(const bigint &other) noexcept {return 0;};
-bool bigint::operator!=(const bigint &other) noexcept {return 0;};
-bool bigint::operator< (const bigint &other) noexcept {return 0;};
-bool bigint::operator> (const bigint &other) noexcept {return 0;};
-bool bigint::operator>=(const bigint &other) noexcept {return 0;};
-bool bigint::operator<=(const bigint &other) noexcept {return 0;};
+bool bigint::operator==(const bigint &other) const noexcept {return 0;};
+bool bigint::operator!=(const bigint &other) const noexcept {return 0;};
+bool bigint::operator< (const bigint &other) const noexcept {return 0;};
+bool bigint::operator> (const bigint &other) const noexcept {return 0;};
+bool bigint::operator>=(const bigint &other) const noexcept {return 0;};
+bool bigint::operator<=(const bigint &other) const noexcept {return 0;};
 
 std::string bigint::str() {
     return "";
@@ -261,4 +318,11 @@ bigint bigint::sqrt() {
     //}
     //return ans;
     return {};
+}
+
+/**
+* @param new_size - The amount of integers in big integer. 
+*/
+void bigint::set_default_size(const size_t &new_size) {
+    default_size = new_size;
 }
